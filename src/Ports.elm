@@ -19,11 +19,17 @@ type alias TalkPortDto =
 
 type alias PortTaskResult d = {
         errors: List String
-        , data: d
+        , data: Maybe d
     }
 
+toResult: PortTaskResult d -> Result (List String) d
+toResult { data, errors } = case data of
+    Just d -> Result.Ok d
+    Nothing -> Result.Err errors
+
 port receiveTalkCollectionResource : (List TalkPortDto -> msg) -> Sub msg
-port receivePostedTalk : (PortTaskResult TalkPortDto -> msg)
+
+port receivePostedTalk : (PortTaskResult TalkPortDto -> msg) -> Sub msg
 
 type alias LoginUserPortDto =
     { userId : Int

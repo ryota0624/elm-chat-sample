@@ -1,6 +1,7 @@
 module Model exposing (..)
 
 import Model.TalkCollection as TalkCollection
+import Ports exposing (requestTalkCollectionResource)
 import Types.Page as Page exposing (Page)
 import Types.User as User exposing (User)
 import Routes
@@ -14,6 +15,7 @@ type alias Model =
     { talkCollectionPage : TalkCollectionPage
     , loginUser : User
     , currentRoute: Routes.Route
+    , errors: List String
     }
 
 
@@ -27,6 +29,7 @@ initialModel user route =
     { loginUser = user
     , talkCollectionPage = Page.Loading
     , currentRoute = route
+    , errors = []
     }
 
 
@@ -35,9 +38,17 @@ type Msg
     | TalkCollectionMsg TalkCollection.Msg
     | ReceiveTalkCollectionResource TalkCollection.Resource
     | SetRoute Routes.Route
+    | ReceiveErrors (List String)
 
 setRoute : Routes.Route -> Model -> (Model, Cmd msg)
-setRoute route model = { model | currentRoute = route } ! []
+setRoute route model = let
+    updatedRouteModel  = { model | currentRoute = route }
+ in
+    case route of
+        Routes.TalkCollection ->
+            { updatedRouteModel | talkCollectionPage = Page.Loading } ! [ requestTalkCollectionResource () ]
+        Routes.NotFound ->
+            updatedRouteModel ! []
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -55,6 +66,9 @@ update msg model =
 
         ReceiveTalkCollectionResource resource ->
             { model | talkCollectionPage = Page.fillResource_ { page = model.talkCollectionPage, resource = resource, fill = TalkCollection.fillResource }} ! []
+
+        ReceiveErrors errors ->
+            { model | errors = errors } ! []
 
 
 mapCmdTuple : ( a -> c, b -> d ) -> ( a, Cmd b ) -> ( c, Cmd d )

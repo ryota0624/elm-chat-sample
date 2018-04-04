@@ -2,13 +2,13 @@ module View exposing (..)
 
 import Date exposing (Date)
 import Html exposing (Html, button, div, img, text, textarea)
-import Html.Attributes exposing (src, value)
+import Html.Attributes exposing (src, value, disabled)
 import Html.Events exposing (onInput, onClick)
 import Styles
 import Types.Page as Page
 import Types.Talk exposing (Talk)
 import Model exposing (Model)
-import Model.TalkCollection as TalkCollection
+import Model.TalkCollection as TalkCollection exposing (PostForm, isValidPortForm)
 import Types.User exposing (User)
 
 
@@ -92,7 +92,7 @@ loginUserView { loginUser } =
 talkCollectionPageView : User -> TalkCollection.Model -> Html Model.Msg
 talkCollectionPageView user talkCollectionPage =
     div [ Styles.mainWrap ]
-        ([ postTalkForm user ]
+        ([ postTalkForm user talkCollectionPage.postForm ]
             ++ talkViewList user talkCollectionPage
         )
 
@@ -102,15 +102,15 @@ talkViewList user model =
     model.talks |> List.map talkView
 
 
-postTalkForm : User -> Html Model.Msg
-postTalkForm user =
+postTalkForm : User -> PostForm -> Html Model.Msg
+postTalkForm user postForm =
     div [ Styles.postForm ]
         [ div [ Styles.formLeft ]
             [ img [ Styles.selfImg, src user.iconImageUrl ] []
             ]
         , div [ Styles.formRight ]
             [ textarea [ Styles.formArea, onInput (TalkCollection.UpdatePostTalkText >> Model.TalkCollectionMsg) ] []
-            , button [ Styles.postButton, onClick (TalkCollection.PostTalk user |> Model.TalkCollectionMsg) ] [ text "投稿！" ]
+            , button [ Styles.postButton, onClick (TalkCollection.PostTalk user |> Model.TalkCollectionMsg), disabled <| not <| isValidPortForm postForm ] [ text "投稿！" ]
             ]
         ]
 

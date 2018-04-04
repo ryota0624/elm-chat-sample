@@ -9,6 +9,8 @@ type alias PostForm =
     { talkText : String
     }
 
+isValidPortForm: PostForm -> Bool
+isValidPortForm form = (form.talkText |> String.length) > 0
 
 initialPostForm : PostForm
 initialPostForm =
@@ -45,7 +47,7 @@ fillResource resource maybeModel =
 type Msg
     = UpdatePostTalkText String
     | PostTalk User
-    | FinishPostTalk Talk
+    | FinishPostTalk (Result (List String) Talk)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -57,8 +59,10 @@ update msg model =
         PostTalk user ->
             { model | runningPostTalk = True } ! [ requestPostTalk <| createPostTalkDto user model.postForm ]
 
-        FinishPostTalk talk ->
-            { model | runningPostTalk = False, talks = model.talks ++ [talk] } ! []
+        FinishPostTalk resultTalk ->
+            case resultTalk of
+                Result.Ok talk -> { model | runningPostTalk = False, talks = model.talks ++ [talk] } ! []
+                Result.Err _ -> { model | runningPostTalk = False } ! []
 
 
 createPostTalkDto : User -> PostForm -> PostTalkDto
