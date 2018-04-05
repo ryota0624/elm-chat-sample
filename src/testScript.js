@@ -4,6 +4,9 @@ var elm = Elm.Main.fullscreen();
 elm.ports.receiveLoginUser.send({ userId: 100, name: "SUZUKI", iconImageUrl: "http://www.hochi.co.jp/photo/20170718/20170718-OHT1I50084-T.jpg" });
 
 let id = 3;
+elm.ports.requestTalkDetailResource.subscribe(id => {
+    console.log(id);
+});
 elm.ports.requestPostTalk.subscribe(data => {
     requestAnimationFrame(() => {
         elm.ports.receivePostedTalk.send(
@@ -19,6 +22,7 @@ elm.ports.requestPostTalk.subscribe(data => {
     });
 });
 elm.ports.requestTalkCollectionResource.subscribe(() => {
+    debugger
     requestAnimationFrame(() => {
         elm.ports.receiveTalkCollectionResource.send([
             {

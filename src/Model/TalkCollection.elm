@@ -3,14 +3,18 @@ module Model.TalkCollection exposing (..)
 import Ports exposing (requestPostTalk, PostTalkDto)
 import Types.Talk exposing (Talk)
 import Types.User exposing (User)
+import Types.Page as Page
 
 
 type alias PostForm =
     { talkText : String
     }
 
-isValidPortForm: PostForm -> Bool
-isValidPortForm form = (form.talkText |> String.length) > 0
+
+isValidPortForm : PostForm -> Bool
+isValidPortForm form =
+    (form.talkText |> String.length) > 0
+
 
 initialPostForm : PostForm
 initialPostForm =
@@ -27,21 +31,26 @@ type alias Resource =
     }
 
 
-type alias Model =
+type alias InnerModel =
     { talks : List Talk
     , postForm : PostForm
-    , runningPostTalk: Bool
+    , runningPostTalk : Bool
+    , errors : List String
     }
 
 
-fillResource : Resource -> Maybe Model -> Model
+type alias Model =
+    Page.Model InnerModel
+
+
+fillResource : Resource -> Maybe (Page.Model InnerModel) -> Model
 fillResource resource maybeModel =
     case maybeModel of
         Just model ->
             { model | talks = resource.talks }
 
         Nothing ->
-            Model resource.talks initialPostForm False
+            { talks = resource.talks, postForm = initialPostForm, runningPostTalk = False, errors = [] }
 
 
 type Msg
@@ -61,8 +70,11 @@ update msg model =
 
         FinishPostTalk resultTalk ->
             case resultTalk of
-                Result.Ok talk -> { model | runningPostTalk = False, talks = model.talks ++ [talk] } ! []
-                Result.Err _ -> { model | runningPostTalk = False } ! []
+                Result.Ok talk ->
+                    { model | runningPostTalk = False, talks = model.talks ++ [ talk ] } ! []
+
+                Result.Err _ ->
+                    { model | runningPostTalk = False } ! []
 
 
 createPostTalkDto : User -> PostForm -> PostTalkDto

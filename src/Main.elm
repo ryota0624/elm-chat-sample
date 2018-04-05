@@ -8,11 +8,13 @@ import Styles
 import Types.Talk as Talk exposing (Talk)
 import Types.User as User exposing (User)
 import View exposing (view)
-import Model exposing (Msg, update, initialModel, Model)
+import Model exposing (Msg, update, initialize, Model)
 import Model.TalkCollection as TalkCollection
+import Model.TalkDetail as TalkDetail
 import Json.Decode as Decode
 import Navigation exposing (Location)
 import Routes
+
 
 talkDtoToModel : Ports.TalkPortDto -> Talk
 talkDtoToModel dto =
@@ -39,30 +41,42 @@ loginUserDtoToModel dto =
 
 
 pageSubscriptions : Model.Model -> Sub Msg
-pageSubscriptions model = Sub.batch [
-    Ports.receiveTalkCollectionResource
-        (List.map talkDtoToModel
-            >> TalkCollection.Resource
-            >> Model.ReceiveTalkCollectionResource
-        ),
-     Ports.receivePostedTalk (Ports.toResult >> Result.map (talkDtoToModel) >> TalkCollection.FinishPostTalk >> Model.TalkCollectionMsg)
-    ]
+pageSubscriptions model =
+    Sub.batch
+        [ Ports.receiveTalkCollectionResource
+            (List.map talkDtoToModel
+                >> TalkCollection.Resource
+                >> Model.ReceiveTalkCollectionResource
+            )
+        , Ports.receivePostedTalk (Ports.toResult >> Result.map (talkDtoToModel) >> TalkCollection.FinishPostTalk >> Model.TalkCollectionMsg)
+        , Ports.receiveTalkDetailResource ((\{ talk, comments} -> { talk = talkDtoToModel talk, comments = comments }) >> Model.ReceiveTalkDetailResource)
+        ]
 
-getError: Result (err) a -> Maybe err
-getError result = case result of
-    Result.Ok _ -> Nothing
-    Result.Err err -> Just err
 
-appSubscriptions: Model.Model -> Sub Msg
-appSubscriptions model = Sub.batch [
-    Ports.receivePostedTalk (Ports.toResult >> getError >> Maybe.withDefault [] >> Model.ReceiveErrors)
-    ]
+getError : Result err a -> Maybe err
+getError result =
+    case result of
+        Result.Ok _ ->
+            Nothing
+
+        Result.Err err ->
+            Just err
+
+
+appSubscriptions : Model.Model -> Sub Msg
+appSubscriptions model =
+    Sub.batch
+        [ Ports.receivePostedTalk (Ports.toResult >> getError >> Maybe.withDefault [] >> Model.ReceiveErrors)
+        ]
+
 
 subscriptions : Model.Model -> Sub Msg
-subscriptions model = Sub.batch [
-        pageSubscriptions model,
-        appSubscriptions model
-    ]
+subscriptions model =
+    Sub.batch
+        [ pageSubscriptions model
+        , appSubscriptions model
+        ]
+
 
 main : Program Decode.Value Model Msg
 main =
@@ -76,4 +90,4 @@ main =
 
 init : Decode.Value -> Location -> ( Model, Cmd Msg )
 init jsValue location =
-    Model.initialModel { id = User.UserId "100", name = "SUZUKI", iconImageUrl = "https://grapee.jp/wp-content/uploads/32187_main2.jpg" } (Routes.fromLocation location) ! []
+    Model.initialize { id = User.UserId "100", name = "SUZUKI", iconImageUrl = "https://grapee.jp/wp-content/uploads/32187_main2.jpg" } (Routes.fromLocation location)

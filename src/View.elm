@@ -4,6 +4,7 @@ import Date exposing (Date)
 import Html exposing (Html, button, div, img, text, textarea)
 import Html.Attributes exposing (src, value, disabled)
 import Html.Events exposing (onInput, onClick)
+import Routes
 import Styles
 import Types.Page as Page
 import Types.Talk exposing (Talk)
@@ -23,6 +24,7 @@ talkView talk =
             , div [ Styles.talkFooter ]
                 [ text <| dateToString talk.createdAt ]
             ]
+        , Html.a [ Html.Attributes.href <| Routes.toHashUrl (Routes.TalkDetail talk.id)  ] [text "detail"]
         ]
 
 
@@ -75,14 +77,31 @@ view : Model -> Html Model.Msg
 view model =
     div []
         [ loginUserView model
-        , case model.talkCollectionPage of
-            Page.Loading ->
-                text "loading"
+        , case model.currentPage of
+            Model.InTalkCollectionPage page ->
+                viewFrame model page (talkCollectionPageView model.loginUser)
 
-            Page.Viewable talkCollectionModel ->
-                talkCollectionPageView model.loginUser talkCollectionModel
+            Model.InTalkDetailPage page ->
+                viewFrame model page (toString >> \str -> div [] [ Html.a [Html.Attributes.href <| Routes.toHashUrl Routes.TalkCollection ] [ text str ]])
         ]
 
+viewFrame : Model -> Page.Page m r -> (Page.Model m -> Html Model.Msg) -> Html Model.Msg
+viewFrame model page modelView = case page of
+    Page.Loading errors ->
+        div [] [
+        viewLoading
+        ]
+    Page.Viewable model ->
+        div [] [
+        viewErrors model.errors,
+        modelView model
+        ]
+
+viewErrors : List String -> Html msg
+viewErrors errors = div [] (errors |> List.map text)
+
+viewLoading : Html msg
+viewLoading = text "Loading"
 
 loginUserView : Model -> Html msg
 loginUserView { loginUser } =
